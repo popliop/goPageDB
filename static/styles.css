@@ -1,0 +1,56 @@
+/* Styles for the header navigation menu only */
+header ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+  }
+  
+  header li {
+    float: right;
+  }
+  
+  header li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+  }
+  
+  header li a:hover {
+    background-color: #111;
+  }
+  
+  /* Optional: Style the nav element with a border */
+  nav {
+    border: 1px solid;
+  }
+  
+  /* Additional styling for the content area */
+  .contentCenter {
+    text-align: center;
+    font-family: sans-serif;
+    max-width: 100%;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px;
+    border-style: solid;
+  }
+  
+  .datafield {
+    margin: 20px;
+    width: 60%;
+    height: 300px;
+  }
+
+  .sendBtn{
+    margin: 5px;
+  }
+
+  .body {
+    background-color: black;
+  }
+  
