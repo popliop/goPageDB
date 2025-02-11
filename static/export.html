@@ -18,8 +18,26 @@
   </header>
 
   <div class="container">
-    <h1>Export Data</h1>
-    <p>Export functionality goes here.</p>
+    <!-- For initial debugging, you can remove hx-target and hx-swap -->
+    <form id="dataForm" action="/export" method="POST" enctype="multipart/form-data">
+      <fieldset>
+        <legend>Submit Your Export Data</legend>
+        <p>You can either paste your data or upload a file.</p>
+        
+        <div>
+          <label for="datafield">Paste data:</label><br>
+          <!-- Use name="data" to match server expectations -->
+          <textarea name="data" id="datafield" class="datafield" rows="10" cols="50"></textarea>
+        </div>
+        <div>
+          <label for="fileUpload">Or upload a file:</label><br>
+          <!-- Use name="datafile" to match server expectations -->
+          <input type="file" name="datafile" id="fileUpload">
+        </div>
+        <button type="submit">Send</button>
+      </fieldset>
+    </form>
   </div>
+
 </body>
 </html>
