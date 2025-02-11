@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	server "git.dhl.com/marsorm/goPageDB/pkg"
+	"github.com/marsorm/goPageDB/pkg/server"
 )
 
 func main() {

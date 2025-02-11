@@ -1,3 +1,3 @@
-module git.dhl.com/marsorm/goPageDB
+module github.com/marsorm/goPageDB
 
 go 1.23.3

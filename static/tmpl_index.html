@@ -1,0 +1,20 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <!-- Ensure HTMX is loaded if you intend to use it -->
+      <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+      <link rel="stylesheet" href="/static/styles.css" />
+      <title>CCPU Data Importer</title>
+   </head>
+   <body>
+      {{template "header" .}}
+      <div class="container">
+         <p>Forms goes here:</p>
+         {{template "form" .}}
+      </div>
+   </body>
+</html>
+{{end}}

@@ -1,0 +1,23 @@
+{{define "form"}}
+<form id="dataForm"
+      action="/import"
+      method="POST"
+      enctype="multipart/form-data"
+      hx-post="/import"
+      hx-target="#dataForm"
+      hx-swap="outerHTML">
+  <fieldset>
+    <legend>Submit Your Import Data</legend>
+    <p>You can either paste your data or upload a file.</p>
+    <div>
+      <label for="datafield">Paste data:</label><br>
+      <textarea name="data" id="datafield" class="datafield" rows="10" cols="50"></textarea>
+    </div>
+    <div>
+      <label for="fileUpload">Or upload a file:</label>
+      <input type="file" name="datafile" id="fileUpload">
+    </div>
+    <button type="submit">Send</button>
+  </fieldset>
+</form>
+{{end}}
