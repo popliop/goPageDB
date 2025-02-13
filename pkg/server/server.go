@@ -3,7 +3,9 @@ package server
 import (
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"path/filepath"
 
 	"github.com/marsorm/goPageDB/pkg/tmpl"
 )
@@ -12,7 +14,7 @@ type templateMessage struct {
 	Message string
 }
 
-func NewtemplateMessage(str string) templateMessage {
+func NewTemplateMessage(str string) templateMessage {
 	return templateMessage{
 		Message: str,
 	}
@@ -60,36 +62,43 @@ func (s *APIServer) landingPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *APIServer) handleFileAndData(r *http.Request) (string, string, error) {
+func validateForm(header *multipart.FileHeader) error {
+	if header.Size == 0 {
+		return fmt.Errorf("uploaded file is empty")
+	}
+
+	if filepath.Ext(header.Filename) != ".csv" {
+		return fmt.Errorf("invalid extention")
+	}
+	fmt.Println(header)
+	return nil
+}
+
+func parseRequestForm(r *http.Request) (multipart.File, *multipart.FileHeader, error) {
+	fmt.Println("hello from the othereside")
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
 
-	var filename string
-	fileProvided := false
+	file, header, err := r.FormFile("datafile")
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to retrieve form file from request %w", err)
+	}
+	return file, header, nil
+}
 
-	if file, handler, err := r.FormFile("datafile"); err == nil {
-		defer file.Close()
-		if handler.Size == 0 {
-			return "", "", fmt.Errorf("uploaded file is empty")
-		}
-		filename = handler.Filename
-		fileProvided = true
-	} else {
-		log.Printf("No file uploaded or error retrieving file: %v", err)
+func (s *APIServer) handleFileAndData(r *http.Request) error {
+	fmt.Println("!!!!!!")
+	_, header, err := parseRequestForm(r)
+	if err != nil {
+		return fmt.Errorf("handleFileAndData: %w", err)
 	}
 
-	pastedData := r.FormValue("data")
-	pastedProvided := pastedData != ""
-
-	if fileProvided && pastedProvided {
-		return "", "", fmt.Errorf("please provide either an uploaded file OR pasted data, not both")
-	}
-	if !fileProvided && !pastedProvided {
-		return "", "", fmt.Errorf("please provide either an uploaded file or pasted data")
+	if err := validateForm(header); err != nil {
+		return fmt.Errorf("validateform: %w", err)
 	}
 
-	return filename, pastedData, nil
+	return nil
 }
 
 // importHandler serves the import page on GET and processes file/data submissions on POST.
@@ -98,30 +107,34 @@ func (s *APIServer) importHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
+		// Render the import page for GET requests.
 		if err := tmpl.RenderTemplate(w, "import.html", nil); err != nil {
+			log.Printf("Error rendering import page: %v", err)
 			http.Error(w, "Error rendering import page", http.StatusInternalServerError)
-			log.Printf("importHandler GET error: %v", err)
 		}
+
 	case http.MethodPost:
 		log.Println("POST request received at /import")
-		filename, pastedData, err := s.handleFileAndData(r)
-		if err != nil {
-			if err := tmpl.RenderTemplate(w, "error", NewtemplateMessage("big error")); err != nil {
-				log.Printf("importHandler error rendering error template: %v", err)
+		// Process the incoming file and data.
+		if err := s.handleFileAndData(r); err != nil {
+			log.Printf("Error handling file and data: %v", err)
+			// Try to render an error template with the error message.
+			if renderErr := tmpl.RenderTemplate(w, "error", NewTemplateMessage(err.Error())); renderErr != nil {
+				log.Printf("Error rendering error template: %v", renderErr)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 			return
 		}
 
-		log.Printf("Import - Uploaded file: %s", filename)
-		log.Printf("Import - Pasted data: %s", pastedData)
-
-		if err := tmpl.RenderTemplate(w, "success", NewtemplateMessage("Data Imported Successfully!")); err != nil {
-			http.Error(w, "Error rendering success page", http.StatusInternalServerError)
+		// If everything went well, render a success page.
+		if err := tmpl.RenderTemplate(w, "success", NewTemplateMessage("Data Imported Successfully!")); err != nil {
 			log.Printf("Error rendering success template: %v", err)
+			http.Error(w, "Error rendering success page", http.StatusInternalServerError)
 		}
+
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		log.Printf("Method not allowed: %s", r.Method)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 

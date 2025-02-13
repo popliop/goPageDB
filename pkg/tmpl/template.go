@@ -24,7 +24,6 @@ func LoadTemplates(pattern string) error {
 			log.Printf("Loaded template: %s", tpl.Name())
 		}
 	}
-	log.Println("tmpl map: ", TemplateMap)
 	return nil
 }
 
