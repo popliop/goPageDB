@@ -10,7 +10,7 @@ import (
 
 func main() {
 	fmt.Println("Hello World")
-	database, err := db.NewPostgressStorage()
+	database, err := db.NewPostgresStorage()
 	if err != nil {
 		log.Fatal(err)
 	}

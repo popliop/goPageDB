@@ -73,5 +73,9 @@ func CreateAccountTable(db *sql.DB) (sql.Result, error) {
 	Team VARCHAR(10)
 	)`
 	result, err := db.Exec(query)
-	return result, fmt.Errorf("problem creating db table %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("problem creating DB table %w", err)
+	}
+
+	return result, nil
 }
