@@ -19,7 +19,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("dbAnswer")
 
 	apiServer := server.NewAPIServer(":8080")
 	apiServer.Run()

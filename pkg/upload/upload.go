@@ -7,46 +7,47 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
-	"time"
 )
 
 type FileUpload struct {
-	FileName   string
-	LoadedTime time.Time
-	Data       [][]string
+	FileName string
+	User     string
+	Data     [][]string
 }
 
-func NewFileUpload(fileName string, loadedTime time.Time, data [][]string) FileUpload {
+func NewFileUpload(fileName string, user string, data [][]string) FileUpload {
 	return FileUpload{
-		FileName:   fileName,
-		LoadedTime: loadedTime,
-		Data:       data,
+		FileName: fileName,
+		User:     user,
+		Data:     data,
 	}
 }
 
-func HandleForm(r *http.Request) error {
+func HandleForm(r *http.Request) (*FileUpload, error) {
 	file, header, err := ParseForm(r)
 	if err != nil {
-		return fmt.Errorf("handleForm: %w", err)
+		return nil, fmt.Errorf("handleForm: %w", err)
 	}
 	defer file.Close()
 
 	if err := ValidateForm(header); err != nil {
-		return fmt.Errorf("validateForm: %w", err)
+		return nil, fmt.Errorf("validateForm: %w", err)
 	}
 
 	data, err := ReadFile(file)
 	if err != nil {
-		return fmt.Errorf("readFile: %w", err)
+		return nil, fmt.Errorf("readFile: %w", err)
 	}
 
-	NewFileUpload(header.Filename, time.Now(), data)
+	fileUpload := NewFileUpload(header.Filename, "sys", data)
+	fmt.Println(fileUpload.Data)
 
-	return nil
+	return &fileUpload, nil
 }
 
 func ReadFile(file multipart.File) ([][]string, error) {
 	reader := csv.NewReader(file)
+	reader.Comma = (';')
 	data := [][]string{}
 
 	for {

@@ -1,10 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/marsorm/goPageDB/pkg/db"
 	"github.com/marsorm/goPageDB/pkg/tmpl"
 	"github.com/marsorm/goPageDB/pkg/upload"
 )
@@ -40,7 +40,8 @@ func NewAPIServer(port string) *APIServer {
 
 func (s *APIServer) registerRoutes() {
 	s.router.HandleFunc("/", s.landingPage)
-	s.router.HandleFunc("/import", s.importHandler)
+	s.router.HandleFunc("GET /import", s.importHandlerGET)
+	s.router.HandleFunc("POST /import", s.importHandlerPOST)
 	s.router.HandleFunc("/export", s.exportHandler)
 	s.router.HandleFunc("/help", s.helpPage)
 	s.router.HandleFunc("/test", s.testHandler)
@@ -57,38 +58,53 @@ func (s *APIServer) landingPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *APIServer) importHandler(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) importHandlerPOST(w http.ResponseWriter, r *http.Request) {
+	log.Println("POST request received at /import")
+
+	fileUpload, err := upload.HandleForm(r)
+	if err != nil {
+		log.Printf("Error handling file and data: %v", err)
+		if renderErr := tmpl.RenderTemplate(w, "error", NewTemplateMessage(err.Error())); renderErr != nil {
+			log.Printf("Error rendering error template: %v", renderErr)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	dbConn, err := db.NewPostgresStorage()
+	if err != nil {
+		log.Printf("Database connection error: %v", err)
+		if renderErr := tmpl.RenderTemplate(w, "error", NewTemplateMessage(err.Error())); renderErr != nil {
+			log.Printf("Error rendering error template: %v", renderErr)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+	defer dbConn.Close()
+
+	err = db.UpsertCSVData(dbConn, fileUpload.Data)
+	if err != nil {
+		log.Printf("Error upserting CSV data: %v", err)
+		if renderErr := tmpl.RenderTemplate(w, "error", NewTemplateMessage(err.Error())); renderErr != nil {
+			log.Printf("Error rendering error template: %v", renderErr)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if err := tmpl.RenderTemplate(w, "success", NewTemplateMessage("File processed and data upserted successfully")); err != nil {
+		log.Printf("Error rendering success template: %v", err)
+		http.Error(w, "Error rendering success page", http.StatusInternalServerError)
+	}
+}
+
+func (s *APIServer) importHandlerGET(w http.ResponseWriter, r *http.Request) {
 	log.Printf("importHandler called - Method: %s, URL: %s", r.Method, r.URL.String())
 
-	switch r.Method {
-	case http.MethodGet:
-		// Render the import page.
-		if err := tmpl.RenderTemplate(w, "import.html", nil); err != nil {
-			log.Printf("Error rendering import page: %v", err)
-			http.Error(w, "Error rendering import page", http.StatusInternalServerError)
-		}
-
-	case http.MethodPost:
-		log.Println("POST request received at /import")
-		fmt.Println(upload.GetFilename())
-		if err := upload.HandleForm(r); err != nil {
-			log.Printf("Error handling file and data: %v", err)
-			if renderErr := tmpl.RenderTemplate(w, "error", NewTemplateMessage(err.Error())); renderErr != nil {
-				log.Printf("Error rendering error template: %v", renderErr)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			}
-			fmt.Println("File loaded: ", upload.GetFilename())
-			return
-		}
-
-		if err := tmpl.RenderTemplate(w, "success", NewTemplateMessage("Data Imported Successfully!")); err != nil {
-			log.Printf("Error rendering success template: %v", err)
-			http.Error(w, "Error rendering success page", http.StatusInternalServerError)
-		}
-
-	default:
-		log.Printf("Method not allowed: %s", r.Method)
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	err := tmpl.RenderTemplate(w, "import.html", nil)
+	if err != nil {
+		log.Printf("Error rendering import page: %v", err)
+		http.Error(w, "Error rendering import page", http.StatusInternalServerError)
 	}
 }
 
