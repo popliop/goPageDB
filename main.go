@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+
 	fmt.Println("Hello World")
 	database, err := db.NewPostgresStorage()
 	if err != nil {
